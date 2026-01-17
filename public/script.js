@@ -305,6 +305,14 @@ async function createPeerConnection(peerId, isInitiator) {
             dataChannel = event.channel;
             setupDataChannel(dataChannel);
         };
+    } else {
+        // Initiator creates data channel
+        dataChannel = peerConnection.createDataChannel("fileTransfer");
+        setupDataChannel(dataChannel, window.pendingFile);
+
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        socket.emit('offer', { to: peerId, offer: offer });
     }
 }
 
