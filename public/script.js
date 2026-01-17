@@ -165,6 +165,82 @@ socket.on('ice-candidate', async (data) => {
 });
 
 // --- UI Logic ---
+// Handle File Input
+fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file && selectedPeerId) {
+        startFileTransfer(file);
+    }
+});
+
+// Handle Folder Input
+const folderInput = document.getElementById('folder-input');
+folderInput.addEventListener('change', async () => {
+    if (folderInput.files.length > 0 && selectedPeerId) {
+        showStatus('Zipping folder... please wait');
+        try {
+            const zip = new JSZip();
+            // Get folder name from the first file's webkitRelativePath (e.g., "MyFolder/file.txt")
+            const folderName = folderInput.files[0].webkitRelativePath.split('/')[0] || "Folder";
+
+            for (let i = 0; i < folderInput.files.length; i++) {
+                const file = folderInput.files[i];
+                // Use the relative path to maintain structure
+                zip.file(file.webkitRelativePath, file);
+            }
+
+            const content = await zip.generateAsync({ type: "blob" });
+            // Create a fake file object for the blob with the zip name
+            const zipFile = new File([content], `${folderName}.zip`, { type: "application/zip" });
+
+            startFileTransfer(zipFile);
+        } catch (e) {
+            console.error(e);
+            showStatus('Error processing folder');
+        }
+    }
+});
+
+
+function onFileSelect(peerId) {
+    selectedPeerId = peerId;
+    fileInput.click();
+}
+
+function onFolderSelect(peerId) {
+    selectedPeerId = peerId;
+    folderInput.click();
+}
+
+function startFileTransfer(file) {
+    // Initiate WebRTC connection if not exists
+    if (!peerConnection) {
+        createPeerConnection(selectedPeerId, true).then(() => {
+            // Wait for data channel to be open? 
+            // The createPeerConnection sets up data channel for initiator
+            // We need to wait for 'open' event on datachannel before sending
+            // But existing logic might handle it. 
+            // Actually, createPeerConnection creates separate DC.
+            // We usually queue the file or wait.
+            // For simplicity, let's assume connected or wait for 'open'
+        });
+    }
+
+    // In this simple architecture, we might already have a connection or need to start one.
+    // If we are initiator, channel is created in createPeerConnection.
+
+    // CHECK: Is dataChannel ready?
+    if (dataChannel && dataChannel.readyState === 'open') {
+        sendFile(file);
+    } else {
+        // Queue it? 
+        // For now, assume createPeerConnection(initiator=true) was called and we will send when open
+        // But createPeerConnection is async.
+        // We set a global 'pendingFile' to send once channel opens.
+        window.pendingFile = file;
+    }
+}
+
 
 function updateDeviceList(users) {
     // Clear list
@@ -173,13 +249,11 @@ function updateDeviceList(users) {
     // Filter out self (by checking clientId)
     const peers = users.filter(u => u.clientId !== clientId);
 
-    // If I am Host and someone joined, or if I am Client and I see Host
     if (peers.length > 0) {
         // qrContainer.classList.add('hidden'); // Optional: hide QR when connected
     }
 
     if (peers.length === 0) {
-        // If Host, show message
         if (roomId && window.location.search.includes('room')) { // Check if we are a client in a room
             deviceList.innerHTML = `<p style="text-align:center;">Waiting for host...</p>`;
         }
@@ -189,43 +263,24 @@ function updateDeviceList(users) {
     peers.forEach(user => {
         const card = document.createElement('div');
         card.className = 'device-card';
-        // IMPORTANT: We send to the SOCKET ID, not the Client ID
-        card.onclick = () => onDeviceSelect(user.id);
+        // Remove global onclick, use buttons
+        // card.onclick = () => onDeviceSelect(user.id);
 
         const icon = user.deviceType === 'Mobile' ? '📱' : '💻';
+        // Use server provided name if available, else fallback
+        const displayName = user.deviceName || user.deviceType;
 
         card.innerHTML = `
             <div class="device-icon">${icon}</div>
-            <div class="device-name">${user.deviceType}</div>
-            <small>Click to Send</small>
+            <div class="device-name">${displayName}</div>
+            <div class="actions">
+                <button class="action-btn" onclick="onFileSelect('${user.id}')">File</button>
+                <button class="action-btn folder-btn" onclick="onFolderSelect('${user.id}')">Folder</button>
+            </div>
         `;
         deviceList.appendChild(card);
     });
 }
-
-function onDeviceSelect(peerId) {
-    selectedPeerId = peerId;
-    fileInput.click();
-}
-
-fileInput.addEventListener('change', async () => {
-    const file = fileInput.files[0];
-    if (!file || !selectedPeerId) return;
-
-    // Start WebRTC connection as Initiator
-    await createPeerConnection(selectedPeerId, true);
-
-    // Create Data Channel
-    dataChannel = peerConnection.createDataChannel("fileTransfer");
-    setupDataChannel(dataChannel, file);
-
-    // Create Offer
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socket.emit('offer', { to: selectedPeerId, offer: offer });
-
-    showStatus(`Preparing to send ${file.name}...`);
-});
 
 // --- WebRTC Logic ---
 

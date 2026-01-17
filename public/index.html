@@ -37,9 +37,11 @@
         </footer>
     </div>
 
-    <!-- Hidden file input -->
+    <!-- Hidden file inputs -->
     <input type="file" id="file-input" multiple style="display: none;">
+    <input type="file" id="folder-input" webkitdirectory directory multiple style="display: none;">
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>

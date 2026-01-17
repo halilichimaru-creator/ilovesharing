@@ -41,10 +41,15 @@ io.on('connection', (socket) => {
             }
         }
 
+        // Generate a friendly name (e.g. "Device A1", "Phone 9X")
+        const shortId = clientId.substring(0, 2).toUpperCase();
+        const friendlyName = `${deviceType} ${shortId}`;
+
         // Add new connection
         rooms[roomId][socket.id] = {
             id: socket.id,
             deviceType: deviceType,
+            deviceName: friendlyName,
             clientId: clientId
         };
 
