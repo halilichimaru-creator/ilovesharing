@@ -1,4 +1,21 @@
-const socket = io();
+// --- Configuration ---
+const DEPLOYED_URL = "https://ilovesharing.vercel.app";
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+// Persistent Client ID to handle Vercel reconnections without ghosts
+let clientId = localStorage.getItem('localdrop_client_id');
+if (!clientId) {
+    clientId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    localStorage.setItem('localdrop_client_id', clientId);
+}
+
+// Connect with auth data
+const socket = io(isLocal ? DEPLOYED_URL : undefined, {
+    auth: {
+        clientId: clientId
+    }
+});
+
 const fileInput = document.getElementById('file-input');
 const deviceList = document.getElementById('device-list');
 const transferStatus = document.getElementById('transfer-status');
@@ -9,7 +26,7 @@ const urlDisplay = document.getElementById('url-display');
 
 let myId = null;
 let roomId = null;
-let selectedPeerId = null;
+let selectedPeerId = null; // This will now track SOCKET ID
 let peerConnection = null;
 let dataChannel = null;
 let receivedChunks = [];
@@ -22,7 +39,8 @@ let isReceiving = false;
 // ICE Server configuration (STUN servers)
 const rtcConfig = {
     iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' }
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' } // Added another free STUN
     ]
 };
 
@@ -42,9 +60,15 @@ if (roomId) {
     roomId = generateRoomId();
     console.log('Created room:', roomId);
 
-    // Update URL without reload (optional, good for sharing link)
-    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?room=' + roomId;
-    window.history.pushState({ path: newUrl }, '', newUrl);
+    // Always generate QR code pointing to Production URL
+    // So phone (on 4G/Wifi) goes to the working public server
+    const baseUrl = isLocal ? DEPLOYED_URL : window.location.origin;
+    const newUrl = baseUrl + '/?room=' + roomId;
+
+    // Only update local URL state if not redirecting (optional)
+    if (!isLocal) {
+        window.history.pushState({ path: newUrl }, '', newUrl);
+    }
 
     // Show QR Code
     qrContainer.classList.remove('hidden');
@@ -66,7 +90,7 @@ function generateRoomId() {
 
 socket.on('connect', () => {
     myId = socket.id;
-    console.log('Connected, my ID:', myId);
+    console.log('Connected, Socket ID:', myId, 'Client ID:', clientId);
 
     // Join the room
     if (roomId) {
@@ -84,6 +108,7 @@ socket.on('user-list', (users) => {
 
 socket.on('offer', async (data) => {
     // Incoming connection request (Receiver side for signaling)
+    console.log("Received Offer from", data.from);
     await createPeerConnection(data.from, false); // false = not initiator
     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
     const answer = await peerConnection.createAnswer();
@@ -93,11 +118,13 @@ socket.on('offer', async (data) => {
 
 socket.on('answer', async (data) => {
     // Answer to our offer (Sender side)
+    console.log("Received Answer from", data.from);
     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
 });
 
 socket.on('ice-candidate', async (data) => {
     if (peerConnection) {
+        // console.log("Added ICE candidate");
         await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
     }
 });
@@ -108,20 +135,17 @@ function updateDeviceList(users) {
     // Clear list
     deviceList.innerHTML = '';
 
-    // Filter out self
-    const peers = users.filter(u => u.id !== myId);
+    // Filter out self (by checking clientId)
+    const peers = users.filter(u => u.clientId !== clientId);
 
     // If I am Host and someone joined, or if I am Client and I see Host
     if (peers.length > 0) {
-        // Hide QR if strictly one-to-one or just preference
-        // qrContainer.classList.add('hidden'); 
+        // qrContainer.classList.add('hidden'); // Optional: hide QR when connected
     }
 
     if (peers.length === 0) {
         // If Host, show message
-        if (!urlParams.get('room')) {
-            // Keep QR visible
-        } else {
+        if (roomId && window.location.search.includes('room')) { // Check if we are a client in a room
             deviceList.innerHTML = `<p style="text-align:center;">Waiting for host...</p>`;
         }
         return;
@@ -130,6 +154,7 @@ function updateDeviceList(users) {
     peers.forEach(user => {
         const card = document.createElement('div');
         card.className = 'device-card';
+        // IMPORTANT: We send to the SOCKET ID, not the Client ID
         card.onclick = () => onDeviceSelect(user.id);
 
         const icon = user.deviceType === 'Mobile' ? '📱' : '💻';
