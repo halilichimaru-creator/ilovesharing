@@ -35,6 +35,7 @@ let totalSize = 0;
 let currentFileName = '';
 let currentFileType = ''; // Added for file type handling
 let isReceiving = false;
+let iceCandidateQueue = []; // Queue for candidates arriving before remote description
 
 // ICE Server configuration (STUN servers)
 const rtcConfig = {
@@ -109,8 +110,22 @@ socket.on('user-list', (users) => {
 socket.on('offer', async (data) => {
     // Incoming connection request (Receiver side for signaling)
     console.log("Received Offer from", data.from);
+    iceCandidateQueue = []; // Clear queue for new connection
+
     await createPeerConnection(data.from, false); // false = not initiator
     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+
+    // Process queued candidates
+    while (iceCandidateQueue.length > 0) {
+        const candidate = iceCandidateQueue.shift();
+        try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            console.log("Added queued ICE candidate");
+        } catch (e) {
+            console.error("Error adding queued candidate:", e);
+        }
+    }
+
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
     socket.emit('answer', { to: data.from, answer: answer });
@@ -120,12 +135,32 @@ socket.on('answer', async (data) => {
     // Answer to our offer (Sender side)
     console.log("Received Answer from", data.from);
     await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+
+    // Process queued candidates (rarely needed here but good practice)
+    while (iceCandidateQueue.length > 0) {
+        const candidate = iceCandidateQueue.shift();
+        try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            console.log("Added queued ICE candidate");
+        } catch (e) {
+            console.error("Error adding queued candidate:", e);
+        }
+    }
 });
 
 socket.on('ice-candidate', async (data) => {
     if (peerConnection) {
-        // console.log("Added ICE candidate");
-        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
+            try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+                // console.log("Added ICE candidate immediatley");
+            } catch (e) {
+                console.error("Error adding candidate", e);
+            }
+        } else {
+            console.log("Queueing ICE candidate (RemoteDesc not ready)");
+            iceCandidateQueue.push(data.candidate);
+        }
     }
 });
 
@@ -231,10 +266,14 @@ function setupDataChannel(channel, fileToSend = null) {
 
 // --- File Transfer Logic (Sender) ---
 
-const CHUNK_SIZE = 16 * 1024; // 16KB
+const CHUNK_SIZE = 64 * 1024; // 64KB (Increased for speed)
+const MAX_BUFFER_AMOUNT = 16 * 1024 * 1024; // 16MB
 
 async function sendFile(file) {
     showStatus(`Sending ${file.name}...`);
+
+    // Configure backpressure threshold
+    dataChannel.bufferedAmountLowThreshold = 1024 * 1024; // 1MB
 
     // First message: Metadata
     dataChannel.send(JSON.stringify({
@@ -247,29 +286,33 @@ async function sendFile(file) {
     const buffer = await file.arrayBuffer();
     let offset = 0;
 
-    // Loop to send chunks
-    while (offset < buffer.byteLength) {
-        const chunk = buffer.slice(offset, offset + CHUNK_SIZE);
+    try {
+        // Loop to send chunks
+        while (offset < buffer.byteLength) {
+            const chunk = buffer.slice(offset, offset + CHUNK_SIZE);
 
-        // Wait if buffer is full (Backpressure handling)
-        if (dataChannel.bufferedAmount > 16 * 1024 * 1024) { // 16MB limit
-            await new Promise(r => {
-                const check = () => {
-                    if (dataChannel.bufferedAmount < 8 * 1024 * 1024) r();
-                    else setTimeout(check, 50);
-                };
-                check();
-            });
+            // Wait if buffer is full (Backpressure handling - Event Based)
+            if (dataChannel.bufferedAmount > MAX_BUFFER_AMOUNT) {
+                await new Promise(resolve => {
+                    dataChannel.onbufferedamountlow = () => {
+                        dataChannel.onbufferedamountlow = null; // Clean up listener
+                        resolve();
+                    };
+                });
+            }
+
+            dataChannel.send(chunk);
+            offset += chunk.byteLength;
+            updateProgress(offset, file.size);
         }
 
-        dataChannel.send(chunk);
-        offset += chunk.byteLength;
-        updateProgress(offset, file.size);
+        // Send EOF
+        dataChannel.send(JSON.stringify({ type: 'eof' }));
+        showStatus('Sent successfully!');
+    } catch (err) {
+        console.error("Transfer Error:", err);
+        showStatus('Error sending file.');
     }
-
-    // Send EOF
-    dataChannel.send(JSON.stringify({ type: 'eof' }));
-    showStatus('Sent successfully!');
 }
 
 // --- File Transfer Logic (Receiver) ---
