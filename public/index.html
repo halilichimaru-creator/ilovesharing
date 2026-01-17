@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalDrop</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header>
+            <h1>LocalDrop</h1>
+            <p>Scan to Connect</p>
+        </header>
+
+        <!-- QR Code Area (Visible only to Host) -->
+        <div id="qr-container" class="qr-container hidden">
+            <div id="qrcode"></div>
+            <p>Scan with your phone to join</p>
+            <p class="room-url"><small id="url-display"></small></p>
+        </div>
+
+        <main id="device-list" class="device-list">
+            <!-- Connected devices will appear here -->
+        </main>
+
+        <footer>
+            <div id="transfer-status" class="hidden">
+                <div class="progress-container">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+                <p id="status-text">Transferring...</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="file-input" multiple style="display: none;">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>

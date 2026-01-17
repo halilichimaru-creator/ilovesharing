@@ -1,0 +1,314 @@
+const socket = io();
+const fileInput = document.getElementById('file-input');
+const deviceList = document.getElementById('device-list');
+const transferStatus = document.getElementById('transfer-status');
+const progressBar = document.getElementById('progress-bar');
+const statusText = document.getElementById('status-text');
+const qrContainer = document.getElementById('qr-container');
+const urlDisplay = document.getElementById('url-display');
+
+let myId = null;
+let roomId = null;
+let selectedPeerId = null;
+let peerConnection = null;
+let dataChannel = null;
+let receivedChunks = [];
+let receivedSize = 0;
+let totalSize = 0;
+let currentFileName = '';
+let currentFileType = ''; // Added for file type handling
+let isReceiving = false;
+
+// ICE Server configuration (STUN servers)
+const rtcConfig = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' }
+    ]
+};
+
+// --- Initialization ---
+
+// Check if room ID is in URL
+const urlParams = new URLSearchParams(window.location.search);
+roomId = urlParams.get('room');
+
+if (roomId) {
+    // We are a CLIENT (Scanner)
+    console.log('Joining room:', roomId);
+    // Join room when socket connects
+} else {
+    // We are the HOST
+    // Generate Room ID
+    roomId = generateRoomId();
+    console.log('Created room:', roomId);
+
+    // Update URL without reload (optional, good for sharing link)
+    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?room=' + roomId;
+    window.history.pushState({ path: newUrl }, '', newUrl);
+
+    // Show QR Code
+    qrContainer.classList.remove('hidden');
+    urlDisplay.innerText = newUrl;
+
+    new QRCode(document.getElementById("qrcode"), {
+        text: newUrl,
+        width: 128,
+        height: 128
+    });
+}
+
+function generateRoomId() {
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+
+// --- Socket.io Events ---
+
+socket.on('connect', () => {
+    myId = socket.id;
+    console.log('Connected, my ID:', myId);
+
+    // Join the room
+    if (roomId) {
+        socket.emit('join-room', roomId);
+    }
+});
+
+socket.on('joined', (data) => {
+    console.log('Successfully joined room:', data.room);
+});
+
+socket.on('user-list', (users) => {
+    updateDeviceList(users);
+});
+
+socket.on('offer', async (data) => {
+    // Incoming connection request (Receiver side for signaling)
+    await createPeerConnection(data.from, false); // false = not initiator
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('answer', { to: data.from, answer: answer });
+});
+
+socket.on('answer', async (data) => {
+    // Answer to our offer (Sender side)
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+});
+
+socket.on('ice-candidate', async (data) => {
+    if (peerConnection) {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+    }
+});
+
+// --- UI Logic ---
+
+function updateDeviceList(users) {
+    // Clear list
+    deviceList.innerHTML = '';
+
+    // Filter out self
+    const peers = users.filter(u => u.id !== myId);
+
+    // If I am Host and someone joined, or if I am Client and I see Host
+    if (peers.length > 0) {
+        // Hide QR if strictly one-to-one or just preference
+        // qrContainer.classList.add('hidden'); 
+    }
+
+    if (peers.length === 0) {
+        // If Host, show message
+        if (!urlParams.get('room')) {
+            // Keep QR visible
+        } else {
+            deviceList.innerHTML = `<p style="text-align:center;">Waiting for host...</p>`;
+        }
+        return;
+    }
+
+    peers.forEach(user => {
+        const card = document.createElement('div');
+        card.className = 'device-card';
+        card.onclick = () => onDeviceSelect(user.id);
+
+        const icon = user.deviceType === 'Mobile' ? '📱' : '💻';
+
+        card.innerHTML = `
+            <div class="device-icon">${icon}</div>
+            <div class="device-name">${user.deviceType}</div>
+            <small>Click to Send</small>
+        `;
+        deviceList.appendChild(card);
+    });
+}
+
+function onDeviceSelect(peerId) {
+    selectedPeerId = peerId;
+    fileInput.click();
+}
+
+fileInput.addEventListener('change', async () => {
+    const file = fileInput.files[0];
+    if (!file || !selectedPeerId) return;
+
+    // Start WebRTC connection as Initiator
+    await createPeerConnection(selectedPeerId, true);
+
+    // Create Data Channel
+    dataChannel = peerConnection.createDataChannel("fileTransfer");
+    setupDataChannel(dataChannel, file);
+
+    // Create Offer
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    socket.emit('offer', { to: selectedPeerId, offer: offer });
+
+    showStatus(`Preparing to send ${file.name}...`);
+});
+
+// --- WebRTC Logic ---
+
+async function createPeerConnection(peerId, isInitiator) {
+    if (peerConnection) peerConnection.close();
+
+    peerConnection = new RTCPeerConnection(rtcConfig);
+
+    peerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            socket.emit('ice-candidate', { to: peerId, candidate: event.candidate });
+        }
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+        console.log('Connection state:', peerConnection.connectionState);
+    };
+
+    if (!isInitiator) {
+        // Receiver waits for data channel
+        peerConnection.ondatachannel = (event) => {
+            dataChannel = event.channel;
+            setupDataChannel(dataChannel);
+        };
+    }
+}
+
+function setupDataChannel(channel, fileToSend = null) {
+    channel.onopen = () => {
+        console.log("Data Channel Open");
+        if (fileToSend) {
+            sendFile(fileToSend);
+        }
+    };
+
+    channel.onmessage = handleReceiveMessage;
+}
+
+// --- File Transfer Logic (Sender) ---
+
+const CHUNK_SIZE = 16 * 1024; // 16KB
+
+async function sendFile(file) {
+    showStatus(`Sending ${file.name}...`);
+
+    // First message: Metadata
+    dataChannel.send(JSON.stringify({
+        type: 'metadata',
+        name: file.name,
+        size: file.size,
+        fileType: file.type
+    }));
+
+    const buffer = await file.arrayBuffer();
+    let offset = 0;
+
+    // Loop to send chunks
+    while (offset < buffer.byteLength) {
+        const chunk = buffer.slice(offset, offset + CHUNK_SIZE);
+
+        // Wait if buffer is full (Backpressure handling)
+        if (dataChannel.bufferedAmount > 16 * 1024 * 1024) { // 16MB limit
+            await new Promise(r => {
+                const check = () => {
+                    if (dataChannel.bufferedAmount < 8 * 1024 * 1024) r();
+                    else setTimeout(check, 50);
+                };
+                check();
+            });
+        }
+
+        dataChannel.send(chunk);
+        offset += chunk.byteLength;
+        updateProgress(offset, file.size);
+    }
+
+    // Send EOF
+    dataChannel.send(JSON.stringify({ type: 'eof' }));
+    showStatus('Sent successfully!');
+}
+
+// --- File Transfer Logic (Receiver) ---
+
+function handleReceiveMessage(event) {
+    const data = event.data;
+
+    // Check if data is string (metadata or EOF) or ArrayBuffer (file data)
+    if (typeof data === 'string') {
+        const message = JSON.parse(data);
+        if (message.type === 'metadata') {
+            receivedChunks = [];
+            receivedSize = 0;
+            totalSize = message.size;
+            currentFileName = message.name;
+            currentFileType = message.fileType;
+            isReceiving = true;
+            showStatus(`Receiving ${currentFileName}...`);
+        } else if (message.type === 'eof') {
+            downloadFile();
+        }
+    } else {
+        // It's a chunk (ArrayBuffer)
+        receivedChunks.push(data);
+        receivedSize += data.byteLength;
+        updateProgress(receivedSize, totalSize);
+    }
+}
+
+function downloadFile() {
+    const blob = new Blob(receivedChunks, { type: currentFileType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = currentFileName;
+    document.body.appendChild(a);
+    a.click();
+
+    // Cleanup
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    receivedChunks = [];
+    isReceiving = false;
+    showStatus('Download complete!');
+    setTimeout(() => {
+        transferStatus.classList.add('hidden');
+    }, 3000);
+}
+
+// --- Helpers ---
+
+function updateProgress(current, total) {
+    const percent = Math.round((current / total) * 100);
+    progressBar.style.width = percent + '%';
+
+    if (isReceiving) {
+        statusText.innerText = `Receiving... ${percent}%`;
+    } else {
+        statusText.innerText = `Sending... ${percent}%`;
+    }
+}
+
+function showStatus(msg) {
+    transferStatus.classList.remove('hidden');
+    statusText.innerText = msg;
+    progressBar.style.width = '0%';
+}
