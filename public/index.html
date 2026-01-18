@@ -27,19 +27,28 @@
                 <span>ILOVE<strong>SHARE</strong></span>
             </div>
             <div class="nav-actions">
+                <div class="lang-selector">
+                    <button class="lang-btn"><span id="current-lang-flag">🇫🇷</span> <span
+                            id="current-lang-name">FR</span></button>
+                    <div class="lang-dropdown">
+                        <div class="lang-option" onclick="setLanguage('fr')" id="lang-fr">🇫🇷 Français</div>
+                        <div class="lang-option" onclick="setLanguage('en')" id="lang-en">🇺🇸 English</div>
+                        <div class="lang-option" onclick="setLanguage('de')" id="lang-de">🇩🇪 Deutsch</div>
+                    </div>
+                </div>
                 <button id="install-btn" class="status-badge hidden"
-                    style="cursor:pointer; border: 1px solid var(--primary); color: var(--primary);">Installer
-                    l'App</button>
+                    style="cursor:pointer; border: 1px solid var(--primary); color: var(--primary);"
+                    data-i18n="install_app">Installer l'App</button>
                 <button id="test-notif-btn" class="status-badge" style="cursor:pointer; border: 1px solid #ddd;"
                     title="Tester les notifications">🔔</button>
                 <button id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode">🌓</button>
-                <div id="connection-status" class="status-badge">Prêt à connecter</div>
+                <div id="connection-status" class="status-badge" data-i18n="ready">Prêt à connecter</div>
             </div>
         </nav>
 
         <header class="hero">
-            <h1>Partagez vos fichiers <span>simplement</span></h1>
-            <p>Connectez vos appareils instantanément via votre réseau local. Sécurisé, rapide et gratuit.</p>
+            <h1 data-i18n="hero_title">Partagez vos fichiers, simplement.</h1>
+            <p data-i18n="hero_subtitle">Ultra-rapide. P2P direct. Sans limites.</p>
         </header>
 
         <section id="qr-section" class="qr-section hidden">
@@ -57,14 +66,15 @@
             <!-- Devices will appear here -->
             <div class="empty-state">
                 <div class="loader-ring"></div>
-                <p>En attente d'autres appareils...</p>
+                <p data-i18n="waiting_devices">En attente d'autres appareils...</p>
             </div>
         </main>
 
         <section id="history-section" class="history-section hidden">
             <div class="section-header">
-                <h2>Historique des transferts</h2>
-                <button class="action-btn small secondary" onclick="clearHistory()">Effacer</button>
+                <h2 data-i18n="history_title">Historique des transferts</h2>
+                <button class="action-btn small secondary" onclick="clearHistory()"
+                    data-i18n="clear_history">Effacer</button>
             </div>
             <div id="history-list" class="history-list">
                 <!-- History items will appear here -->
@@ -75,21 +85,23 @@
             <div class="magic-grid">
                 <div class="magic-card clipboard">
                     <div class="magic-header">
-                        <h3>📋 Presse-papier</h3>
-                        <span class="magic-badge">Sync auto</span>
+                        <h3 data-i18n="clipboard_title">📋 Presse-papier</h3>
+                        <span class="magic-badge" data-i18n="sync_auto">Sync auto</span>
                     </div>
-                    <textarea id="clipboard-area" placeholder="Copiez du texte ici pour le partager..."></textarea>
-                    <button id="copy-btn" class="action-btn">Copier</button>
+                    <textarea id="clipboard-area" placeholder="Copiez du texte ici pour le partager..."
+                        data-i18n-placeholder="clipboard_placeholder"></textarea>
+                    <button id="copy-btn" class="action-btn" data-i18n="copy">Copier</button>
                 </div>
                 <div class="magic-card notes">
                     <div class="magic-header">
-                        <h3>✍️ Notes partagées</h3>
+                        <h3 data-i18n="notes_title">✍️ Notes partagées</h3>
                     </div>
                     <div id="notes-display" class="notes-display">
-                        <p class="empty-notes">Aucun message pour le moment...</p>
+                        <p class="empty-notes" data-i18n="empty_notes">Aucun message pour le moment...</p>
                     </div>
                     <div class="notes-input-group">
-                        <input type="text" id="note-input" placeholder="Écrire une note...">
+                        <input type="text" id="note-input" placeholder="Écrire une note..."
+                            data-i18n-placeholder="note_placeholder">
                         <button id="send-note-btn">🚀</button>
                     </div>
                 </div>
@@ -97,22 +109,22 @@
         </section>
 
         <section class="how-it-works">
-            <h2>Comment ça marche ?</h2>
+            <h2 data-i18n="how_it_works">Comment ça marche ?</h2>
             <div class="steps-grid">
                 <div class="step-card">
-                    <div class="step-num">01</div>
-                    <h3>Ouvrez le site</h3>
-                    <p>Ouvrez ILOVESHARE sur les deux appareils que vous voulez connecter.</p>
+                    <div class="step-number">01</div>
+                    <h3 data-i18n="step1_title">Ouvrez ILOVESHARE</h3>
+                    <p data-i18n="step1_desc">Sur deux appareils connectés au même réseau (WiFi ou 4G/5G).</p>
                 </div>
                 <div class="step-card">
-                    <div class="step-num">02</div>
-                    <h3>Scannez le QR</h3>
-                    <p>Scannez le code QR de l'ordinateur avec votre téléphone pour créer un lien direct.</p>
+                    <div class="step-number">02</div>
+                    <h3 data-i18n="step2_title">Scannez le QR Code</h3>
+                    <p data-i18n="step2_desc">Utilisez votre téléphone pour scanner le code affiché sur votre PC.</p>
                 </div>
                 <div class="step-card">
-                    <div class="step-num">03</div>
-                    <h3>Partagez !</h3>
-                    <p>Sélectionnez vos fichiers et transférez-les à la vitesse de l'éclair.</p>
+                    <div class="step-number">03</div>
+                    <h3 data-i18n="step3_title">Partagez en direct</h3>
+                    <p data-i18n="step3_desc">Sélectionnez vos fichiers. Ils sont envoyés sans passer par le cloud.</p>
                 </div>
             </div>
         </section>

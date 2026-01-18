@@ -119,6 +119,177 @@ function generateRoomId() {
 }
 
 
+// --- i18n Translations ---
+const translations = {
+    fr: {
+        install_app: "Installer l'App",
+        ready: "Prêt à connecter",
+        hero_title: "Partagez vos fichiers, simplement.",
+        hero_subtitle: "Ultra-rapide. P2P direct. Sans limites.",
+        waiting_devices: "En attente d'autres appareils...",
+        history_title: "Historique des transferts",
+        clear_history: "Effacer",
+        clipboard_title: "📋 Presse-papier",
+        clipboard_placeholder: "Copiez du texte ici pour le partager...",
+        sync_auto: "Sync auto",
+        copy: "Copier",
+        copied: "Copié !",
+        notes_title: "✍️ Notes partagées",
+        note_placeholder: "Écrire une note...",
+        empty_notes: "Aucun message pour le moment...",
+        how_it_works: "Comment ça marche ?",
+        step1_title: "Ouvrez ILOVESHARE",
+        step1_desc: "Sur deux appareils connectés au même réseau (WiFi ou 4G/5G).",
+        step2_title: "Scannez le QR Code",
+        step2_desc: "Utilisez votre téléphone pour scanner le code affiché sur votre PC.",
+        step3_title: "Partagez en direct",
+        step3_desc: "Sélectionnez vos fichiers. Ils sont envoyés sans passer par le cloud.",
+        status_sending: "Envoi de {name}...",
+        status_receiving: "Réception de {name}...",
+        status_sent: "Envoi terminé !",
+        status_received: "Réception terminée !",
+        status_error: "Erreur lors du transfert.",
+        status_zipping: "Compression en cours...",
+        status_ready: "Prêt",
+        btn_file: "Fichier",
+        btn_folder: "Dossier",
+        notif_sent: "Transfert réussi !",
+        notif_sent_body: "Le fichier {name} a été envoyé.",
+        notif_received: "Fichier reçu !",
+        notif_new_message: "Nouveau message !",
+        notif_test_title: "Test Réussi !",
+        notif_test_body: "Ceci est un exemple de notification ILOVESHARE.",
+        notif_thanks: "Merci !",
+        notif_enabled: "Les notifications sont maintenant activées."
+    },
+    en: {
+        install_app: "Install App",
+        ready: "Ready to connect",
+        hero_title: "Share your files, simply.",
+        hero_subtitle: "Ultra-fast. Direct P2P. No limits.",
+        waiting_devices: "Waiting for other devices...",
+        history_title: "Transfer History",
+        clear_history: "Clear",
+        clipboard_title: "📋 Shared Clipboard",
+        clipboard_placeholder: "Paste text here to share...",
+        sync_auto: "Auto sync",
+        copy: "Copy",
+        copied: "Copied!",
+        notes_title: "✍️ Shared Notes",
+        note_placeholder: "Write a note...",
+        empty_notes: "No messages yet...",
+        how_it_works: "How it works?",
+        step1_title: "Open ILOVESHARE",
+        step1_desc: "On two devices connected to the same network (WiFi or 4G/5G).",
+        step2_title: "Scan QR Code",
+        step2_desc: "Use your phone to scan the code displayed on your PC.",
+        step3_title: "Share Live",
+        step3_desc: "Select your files. They are sent without going through the cloud.",
+        status_sending: "Sending {name}...",
+        status_receiving: "Receiving {name}...",
+        status_sent: "Sent successfully!",
+        status_received: "Received successfully!",
+        status_error: "Transfer error.",
+        status_zipping: "Zipping folder...",
+        status_ready: "Ready",
+        btn_file: "File",
+        btn_folder: "Folder",
+        notif_sent: "Transfer successful!",
+        notif_sent_body: "The file {name} has been sent.",
+        notif_received: "File received!",
+        notif_new_message: "New message!",
+        notif_test_title: "Test Successful!",
+        notif_test_body: "This is an ILOVESHARE notification example.",
+        notif_thanks: "Thank you!",
+        notif_enabled: "Notifications are now enabled."
+    },
+    de: {
+        install_app: "App installieren",
+        ready: "Bereit zum Verbinden",
+        hero_title: "Dateien teilen, ganz einfach.",
+        hero_subtitle: "Ultraschnell. Direktes P2P. Keine Grenzen.",
+        waiting_devices: "Warten auf andere Geräte...",
+        history_title: "Übertragungsverlauf",
+        clear_history: "Löschen",
+        clipboard_title: "📋 Zwischenablage",
+        clipboard_placeholder: "Text hier einfügen, um ihn zu teilen...",
+        sync_auto: "Auto-Sync",
+        copy: "Kopieren",
+        copied: "Kopiert!",
+        notes_title: "✍️ Geteilte Notizen",
+        note_placeholder: "Notiz schreiben...",
+        empty_notes: "Noch keine Nachrichten...",
+        how_it_works: "Wie funktioniert es?",
+        step1_title: "ILOVESHARE öffnen",
+        step1_desc: "Auf zwei Geräten im selben Netzwerk (WLAN oder 4G/5G).",
+        step2_title: "QR-Code scannen",
+        step2_desc: "Scannen Sie den auf Ihrem PC angezeigten Code mit Ihrem Handy.",
+        step3_title: "Live teilen",
+        step3_desc: "Wählen Sie Ihre Dateien aus. Sie werden ohne Cloud-Umweg gesendet.",
+        status_sending: "Sende {name}...",
+        status_receiving: "Empfange {name}...",
+        status_sent: "Erfolgreich gesendet!",
+        status_received: "Erfolgreich empfangen!",
+        status_error: "Übertragungsfehler.",
+        status_zipping: "Ordner wird komprimiert...",
+        status_ready: "Bereit",
+        btn_file: "Datei",
+        btn_folder: "Ordner",
+        notif_sent: "Übertragung erfolgreich!",
+        notif_sent_body: "Die Datei {name} wurde gesendet.",
+        notif_received: "Datei empfangen!",
+        notif_new_message: "Neue Nachricht!",
+        notif_test_title: "Test erfolgreich!",
+        notif_test_body: "Dies ist ein Beispiel für eine ILOVESHARE-Benachrichtigung.",
+        notif_thanks: "Vielen Dank!",
+        notif_enabled: "Benachrichtigungen sind jetzt aktiviert."
+    }
+};
+
+let currentLang = localStorage.getItem('iloveshare_lang') || 'fr';
+
+function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('iloveshare_lang', lang);
+    updateUI();
+}
+
+function updateUI() {
+    const t = translations[currentLang];
+
+    // Update text content
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key]) el.innerText = t[key];
+    });
+
+    // Update placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (t[key]) el.placeholder = t[key];
+    });
+
+    // Update language switcher UI
+    const flags = { fr: '🇫🇷', en: '🇺🇸', de: '🇩🇪' };
+    const names = { fr: 'FR', en: 'EN', de: 'DE' };
+    const currentLangFlagEl = document.getElementById('current-lang-flag');
+    const currentLangNameEl = document.getElementById('current-lang-name');
+    if (currentLangFlagEl) currentLangFlagEl.innerText = flags[currentLang];
+    if (currentLangNameEl) currentLangNameEl.innerText = names[currentLang];
+
+    // Highlight active option
+    document.querySelectorAll('.lang-option').forEach(opt => {
+        opt.classList.toggle('active', opt.id === `lang-${currentLang}`);
+    });
+}
+
+// Initial UI update
+document.addEventListener('DOMContentLoaded', updateUI);
+
+// Global access for onclick handlers
+window.setLanguage = setLanguage;
+
+
 // --- Socket.io Events ---
 
 // --- Theme Management ---
@@ -176,12 +347,13 @@ testNotifBtn.addEventListener('click', () => {
         return;
     }
 
+    const t = translations[currentLang];
     if (Notification.permission === 'granted') {
-        showNotification('Test Réussi !', 'Ceci est un exemple de notification ILOVESHARE.');
+        showNotification(t.notif_test_title, t.notif_test_body);
     } else {
         Notification.requestPermission().then(permission => {
             if (permission === 'granted') {
-                showNotification('Merci !', 'Les notifications sont maintenant activées.');
+                showNotification(t.notif_thanks, t.notif_enabled);
             } else {
                 alert("Vous avez désactivé les notifications. Veuillez les réactiver dans les paramètres de votre navigateur.");
             }
@@ -234,8 +406,9 @@ socket.on('connect', () => {
         copyBtn.addEventListener('click', () => {
             clipboardArea.select();
             document.execCommand('copy');
-            copyBtn.innerText = 'Copié !';
-            setTimeout(() => copyBtn.innerText = 'Copier', 2000);
+            const t = translations[currentLang];
+            copyBtn.innerText = t.copied;
+            setTimeout(() => copyBtn.innerText = t.copy, 2000);
         });
 
         // Direct Notes
@@ -361,7 +534,8 @@ fileInput.addEventListener('change', () => {
 const folderInput = document.getElementById('folder-input');
 folderInput.addEventListener('change', async () => {
     if (folderInput.files.length > 0 && selectedPeerId) {
-        showStatus('Zipping folder... please wait');
+        const t = translations[currentLang];
+        showStatus(t.status_zipping);
         try {
             const zip = new JSZip();
             // Get folder name from the first file's webkitRelativePath (e.g., "MyFolder/file.txt")
@@ -380,7 +554,7 @@ folderInput.addEventListener('change', async () => {
             startFileTransfer(zipFile);
         } catch (e) {
             console.error(e);
-            showStatus('Error processing folder');
+            showStatus(t.status_error);
         }
     }
 });
@@ -416,6 +590,7 @@ function startFileTransfer(file) {
 function updateDeviceList(users) {
     // Clear list
     deviceList.innerHTML = '';
+    const t = translations[currentLang];
 
     // Filter out self
     const peers = users.filter(u => u.clientId !== clientId);
@@ -424,7 +599,7 @@ function updateDeviceList(users) {
         deviceList.innerHTML = `
             <div class="empty-state">
                 <div class="loader-ring"></div>
-                <p>En attente d'autres appareils sur votre réseau...</p>
+                <p data-i18n="waiting_devices">${t.waiting_devices}</p>
             </div>
         `;
         return;
@@ -441,8 +616,8 @@ function updateDeviceList(users) {
             <div class="device-icon">${icon}</div>
             <div class="device-name">${displayName}</div>
             <div class="actions">
-                <button class="action-btn" onclick="onFileSelect('${user.id}')">Fichier</button>
-                <button class="action-btn folder-btn" onclick="onFolderSelect('${user.id}')">Dossier</button>
+                <button class="action-btn" onclick="onFileSelect('${user.id}')" data-i18n="btn_file">${t.btn_file}</button>
+                <button class="action-btn folder-btn" onclick="onFolderSelect('${user.id}')" data-i18n="btn_folder">${t.btn_folder}</button>
             </div>
         `;
         deviceList.appendChild(card);
@@ -471,7 +646,8 @@ async function createPeerConnection(peerId, isInitiator) {
         }
         if (peerConnection.connectionState === 'failed') {
             console.error("WebRTC Connection Failed. Check STUN/TURN servers or firewall.");
-            showStatus("Connection Failed - Retrying...");
+            const t = translations[currentLang];
+            showStatus(t.status_connection_failed || "Connection Failed - Retrying..."); // Assuming a new translation key
         }
     };
 
@@ -530,7 +706,8 @@ const CHUNK_SIZE = 64 * 1024; // 64KB (Increased for speed)
 const MAX_BUFFER_AMOUNT = 16 * 1024 * 1024; // 16MB
 
 async function sendFile(file) {
-    showStatus(`Envoi de ${file.name}...`);
+    const t = translations[currentLang];
+    showStatus(t.status_sending.replace('{name}', file.name));
 
     // Configure backpressure threshold
     dataChannel.bufferedAmountLowThreshold = 1024 * 1024; // 1MB
@@ -573,19 +750,19 @@ async function sendFile(file) {
                 } else {
                     // Send EOF
                     dataChannel.send(JSON.stringify({ type: 'eof' }));
-                    showStatus('Envoi terminé !');
+                    showStatus(t.status_sent);
                     addToHistory(file.name, file.size, 'sent');
-                    showNotification('Transfert réussi !', `Le fichier ${file.name} a été envoyé.`);
+                    showNotification(t.notif_sent, t.notif_sent_body.replace('{name}', file.name));
                 }
             } catch (err) {
                 console.error("Transfer Error:", err);
-                showStatus('Erreur lors de l\'envoi.');
+                showStatus(translations[currentLang].status_error);
             }
         };
 
         reader.onerror = (err) => {
             console.error("FileReader Error:", err);
-            showStatus('Erreur de lecture.');
+            showStatus(translations[currentLang].status_error);
         };
 
         reader.readAsArrayBuffer(chunk);
@@ -598,6 +775,7 @@ async function sendFile(file) {
 
 function handleReceiveMessage(event) {
     const data = event.data;
+    const t = translations[currentLang];
 
     // Check if data is string (metadata or EOF) or ArrayBuffer (file data)
     if (typeof data === 'string') {
@@ -613,18 +791,19 @@ function handleReceiveMessage(event) {
             lastBytes = 0;
             lastTime = Date.now();
             speedSamples = [];
-            showStatus(`Réception de ${currentFileName}...`);
+
+            showStatus(t.status_receiving.replace('{name}', currentFileName));
         } else if (message.type === 'eof') {
             const blob = downloadFile();
             addToHistory(currentFileName, totalSize, 'received', blob);
-            showNotification('Fichier reçu !', currentFileName);
+            showNotification(t.notif_received, currentFileName);
         } else if (message.type === 'clipboard') {
             clipboardArea.value = message.text;
         } else if (message.type === 'note') {
             displayNote(message.text, false);
             // Optionally notify user for high visibility
             if (document.hidden) {
-                showNotification('Nouveau message !', message.text);
+                showNotification(t.notif_new_message, message.text);
             }
         }
     } else {
@@ -651,7 +830,8 @@ function downloadFile() {
 
     receivedChunks = [];
     isReceiving = false;
-    showStatus('Téléchargement terminé !');
+    const t = translations[currentLang];
+    showStatus(t.status_received);
     setTimeout(() => {
         transferOverlay.classList.add('hidden');
     }, 3000);
@@ -696,23 +876,28 @@ function updateProgress(current, total) {
         const etaSeconds = avgSpeed > 0 ? Math.round(remainingBytes / avgSpeed) : 0;
 
         if (etaSeconds > 3600) {
-            transferEta.innerText = "> 1 heure";
+            transferEta.innerText = currentLang === 'fr' ? "> 1 heure" : (currentLang === 'de' ? "> 1 Stunde" : "> 1 hour");
         } else if (etaSeconds > 60) {
             const mins = Math.floor(etaSeconds / 60);
             const secs = etaSeconds % 60;
-            transferEta.innerText = `${mins}m ${secs}s restants`;
+            const t = translations[currentLang];
+            const minStr = currentLang === 'fr' ? 'm' : (currentLang === 'de' ? 'm' : 'm');
+            const secStr = currentLang === 'fr' ? 's restants' : (currentLang === 'de' ? 's übrig' : 's left');
+            transferEta.innerText = `${mins}${minStr} ${secs}${secStr}`;
         } else {
-            transferEta.innerText = `${etaSeconds}s restants`;
+            const secStr = currentLang === 'fr' ? 's restants' : (currentLang === 'de' ? 's übrig' : 's left');
+            transferEta.innerText = `${etaSeconds}${secStr}`;
         }
 
         lastBytes = current;
         lastTime = now;
     }
 
+    const t = translations[currentLang];
     if (isReceiving) {
-        statusText.innerText = `Réception... ${percent}%`;
+        statusText.innerText = (currentLang === 'fr' ? 'Réception... ' : (currentLang === 'de' ? 'Empfangen... ' : 'Receiving... ')) + percent + '%';
     } else {
-        statusText.innerText = `Envoi... ${percent}%`;
+        statusText.innerText = (currentLang === 'fr' ? 'Envoi... ' : (currentLang === 'de' ? 'Senden... ' : 'Sending... ')) + percent + '%';
     }
 }
 
@@ -742,6 +927,7 @@ function updateHistoryUI() {
     if (transferHistory.length > 0) {
         historySection.classList.remove('hidden');
     }
+    const t = translations[currentLang];
     historyList.innerHTML = transferHistory.map(item => `
         <div class="history-item">
             <div class="history-info">
@@ -752,7 +938,7 @@ function updateHistoryUI() {
                 </div>
             </div>
             <div class="history-actions">
-                ${item.blob ? `<button class="action-btn small" onclick="downloadHistoryItem('${item.id}')">💾 Télécharger</button>` : '✅ Envoyé'}
+                ${item.blob ? `<button class="action-btn small" onclick="downloadHistoryItem('${item.id}')">💾 ${currentLang === 'fr' ? 'Télécharger' : (currentLang === 'de' ? 'Herunterladen' : 'Download')}</button>` : `✅ ${currentLang === 'fr' ? 'Envoyé' : (currentLang === 'de' ? 'Gesendet' : 'Sent')}`}
             </div>
         </div>
     `).join('');

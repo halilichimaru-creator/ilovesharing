@@ -14,12 +14,13 @@
 }
 
 [data-theme="dark"] {
-    --bg: #0F172A;
-    --text: #F8FAFC;
-    --text-muted: #94A3B8;
-    --card-bg: rgba(30, 41, 59, 0.8);
-    --border: #334155;
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    --bg: #000000;
+    --card-bg: #050505;
+    --text: #F8F9FA;
+    --text-muted: #A0AEC0;
+    --border: #111111;
+    --shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    --hover: #0A0A0A;
     --yellow: #422006;
     --blue: #1E3A8A;
     --purple: #4C1D95;
@@ -286,6 +287,83 @@ code {
     font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 1.5rem;
+}
+
+.nav-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Language Switcher */
+.lang-selector {
+    position: relative;
+}
+
+.lang-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.8rem;
+    border-radius: 12px;
+    cursor: pointer;
+    color: var(--text);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all var(--transition);
+}
+
+.lang-btn:hover {
+    background: var(--hover);
+}
+
+.lang-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    z-index: 1000;
+    min-width: 140px;
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.lang-selector:hover .lang-dropdown {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.lang-option {
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text);
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.lang-option:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.lang-option.active {
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.lang-option.active:hover {
+    color: white;
 }
 
 .actions {
