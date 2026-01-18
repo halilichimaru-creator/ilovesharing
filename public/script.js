@@ -35,6 +35,12 @@ const historyList = document.getElementById('history-list');
 const transferSpeed = document.getElementById('transfer-speed');
 const transferEta = document.getElementById('transfer-eta');
 
+// Phase 1 Refinement
+let speedSamples = [];
+const SPEED_SAMPLE_COUNT = 10;
+let lastBytes = 0;
+let lastTime = 0;
+
 // Phase 2 Elements
 const clipboardArea = document.getElementById('clipboard-area');
 const copyBtn = document.getElementById('copy-btn');
@@ -604,10 +610,13 @@ function handleReceiveMessage(event) {
             currentFileType = message.fileType;
             isReceiving = true;
             transferStartTime = Date.now();
+            lastBytes = 0;
+            lastTime = Date.now();
+            speedSamples = [];
             showStatus(`Réception de ${currentFileName}...`);
         } else if (message.type === 'eof') {
-            downloadFile();
-            addToHistory(currentFileName, totalSize, 'received');
+            const blob = downloadFile();
+            addToHistory(currentFileName, totalSize, 'received', blob);
             showNotification('Fichier reçu !', currentFileName);
         } else if (message.type === 'clipboard') {
             clipboardArea.value = message.text;
@@ -635,15 +644,30 @@ function downloadFile() {
     document.body.appendChild(a);
     a.click();
 
-    // Cleanup
+    // Cleanup for auto-download
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Note: We keep the ObjectURL if we want re-downloads, but Blobs are better for memory.
+    // URL.revokeObjectURL(url); 
+
     receivedChunks = [];
     isReceiving = false;
     showStatus('Téléchargement terminé !');
     setTimeout(() => {
         transferOverlay.classList.add('hidden');
     }, 3000);
+
+    return blob;
+}
+
+function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
 }
 
 // --- Helpers ---
@@ -653,24 +677,36 @@ function updateProgress(current, total) {
     progressBar.style.width = percent + '%';
     transferPercent.innerText = percent + '%';
 
-    // Speed & ETA Calculation
+    // Advanced Speed & ETA Calculation (Rolling Average)
     const now = Date.now();
-    const duration = (now - transferStartTime) / 1000; // seconds
-    if (duration > 0.5) { // Update after 0.5s to get stable reading
-        const speedBps = current / duration; // bytes per second
-        const speedMbps = (speedBps / (1024 * 1024)).toFixed(2);
+    const timeDiff = (now - lastTime) / 1000;
+
+    if (timeDiff >= 0.5 || current === total) { // Sample every 0.5s
+        const bytesDiff = current - lastBytes;
+        const instantSpeed = bytesDiff / timeDiff;
+
+        speedSamples.push(instantSpeed);
+        if (speedSamples.length > SPEED_SAMPLE_COUNT) speedSamples.shift();
+
+        const avgSpeed = speedSamples.reduce((a, b) => a + b, 0) / speedSamples.length;
+        const speedMbps = (avgSpeed / (1024 * 1024)).toFixed(2);
         transferSpeed.innerText = `${speedMbps} MB/s`;
 
         const remainingBytes = total - current;
-        const etaSeconds = Math.round(remainingBytes / speedBps);
+        const etaSeconds = avgSpeed > 0 ? Math.round(remainingBytes / avgSpeed) : 0;
 
-        if (etaSeconds > 60) {
+        if (etaSeconds > 3600) {
+            transferEta.innerText = "> 1 heure";
+        } else if (etaSeconds > 60) {
             const mins = Math.floor(etaSeconds / 60);
             const secs = etaSeconds % 60;
             transferEta.innerText = `${mins}m ${secs}s restants`;
         } else {
             transferEta.innerText = `${etaSeconds}s restants`;
         }
+
+        lastBytes = current;
+        lastTime = now;
     }
 
     if (isReceiving) {
@@ -680,12 +716,14 @@ function updateProgress(current, total) {
     }
 }
 
-function addToHistory(name, size, type) {
+function addToHistory(name, size, type, blob = null) {
     const item = {
+        id: Math.random().toString(36).substr(2, 9),
         name,
         size: formatBytes(size),
         type, // 'sent' or 'received'
-        time: new Date().toLocaleTimeString()
+        time: new Date().toLocaleTimeString(),
+        blob // Keep blob for re-download
     };
     transferHistory.unshift(item); // Add to start
     updateHistoryUI();
@@ -713,10 +751,24 @@ function updateHistoryUI() {
                     <div class="history-size">${item.size} • ${item.time}</div>
                 </div>
             </div>
-            <div class="history-status">✅</div>
+            <div class="history-actions">
+                ${item.blob ? `<button class="action-btn small" onclick="downloadHistoryItem('${item.id}')">💾 Télécharger</button>` : '✅ Envoyé'}
+            </div>
         </div>
     `).join('');
 }
+
+window.downloadHistoryItem = (id) => {
+    const item = transferHistory.find(h => h.id === id);
+    if (item && item.blob) {
+        downloadBlob(item.blob, item.name);
+    }
+};
+
+window.clearHistory = () => {
+    transferHistory = [];
+    historySection.classList.add('hidden');
+};
 
 function showStatus(msg) {
     transferOverlay.classList.remove('hidden');
