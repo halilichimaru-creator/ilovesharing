@@ -1,5 +1,3 @@
-// --- Configuration ---
-const DEPLOYED_URL = "https://ilovesharing.vercel.app";
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
 // Persistent Client ID to handle Vercel reconnections without ghosts
@@ -63,8 +61,12 @@ if (roomId) {
     // Join room when socket connects
 } else {
     // We are the HOST
-    // Generate Room ID
-    roomId = generateRoomId();
+    // Generate Room ID or get from session to allow refreshes
+    roomId = sessionStorage.getItem('localdrop_room_id');
+    if (!roomId) {
+        roomId = generateRoomId();
+        sessionStorage.setItem('localdrop_room_id', roomId);
+    }
     console.log('Created room:', roomId);
 
     // QR Code Logic:

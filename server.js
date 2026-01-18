@@ -18,6 +18,11 @@ let rooms = {};
 
 io.on('connection', (socket) => {
     const clientId = socket.handshake.auth.clientId;
+    if (!clientId) {
+        console.log(`Connection rejected: Missing clientId for socket ${socket.id}`);
+        socket.disconnect();
+        return;
+    }
     console.log(`User connected: ${socket.id} (Client: ${clientId})`);
 
     socket.on('join-room', (roomId) => {
