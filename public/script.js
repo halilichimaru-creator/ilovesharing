@@ -368,36 +368,52 @@ async function sendFile(file) {
         fileType: file.type
     }));
 
-    const buffer = await file.arrayBuffer();
     let offset = 0;
 
-    try {
-        // Loop to send chunks
-        while (offset < buffer.byteLength) {
-            const chunk = buffer.slice(offset, offset + CHUNK_SIZE);
+    const readNextChunk = () => {
+        const reader = new FileReader();
+        const chunk = file.slice(offset, offset + CHUNK_SIZE);
 
-            // Wait if buffer is full (Backpressure handling - Event Based)
+        reader.onload = async (e) => {
+            const buffer = e.target.result;
+
+            // Wait if buffer is full (Backpressure handling)
             if (dataChannel.bufferedAmount > MAX_BUFFER_AMOUNT) {
                 await new Promise(resolve => {
                     dataChannel.onbufferedamountlow = () => {
-                        dataChannel.onbufferedamountlow = null; // Clean up listener
+                        dataChannel.onbufferedamountlow = null;
                         resolve();
                     };
                 });
             }
 
-            dataChannel.send(chunk);
-            offset += chunk.byteLength;
-            updateProgress(offset, file.size);
-        }
+            try {
+                dataChannel.send(buffer);
+                offset += buffer.byteLength;
+                updateProgress(offset, file.size);
 
-        // Send EOF
-        dataChannel.send(JSON.stringify({ type: 'eof' }));
-        showStatus('Sent successfully!');
-    } catch (err) {
-        console.error("Transfer Error:", err);
-        showStatus('Error sending file.');
-    }
+                if (offset < file.size) {
+                    readNextChunk();
+                } else {
+                    // Send EOF
+                    dataChannel.send(JSON.stringify({ type: 'eof' }));
+                    showStatus('Sent successfully!');
+                }
+            } catch (err) {
+                console.error("Transfer Error:", err);
+                showStatus('Error sending file.');
+            }
+        };
+
+        reader.onerror = (err) => {
+            console.error("FileReader Error:", err);
+            showStatus('Error reading file.');
+        };
+
+        reader.readAsArrayBuffer(chunk);
+    };
+
+    readNextChunk();
 }
 
 // --- File Transfer Logic (Receiver) ---
