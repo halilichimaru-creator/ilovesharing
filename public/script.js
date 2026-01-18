@@ -42,6 +42,7 @@ const notesDisplay = document.getElementById('notes-display');
 const noteInput = document.getElementById('note-input');
 const sendNoteBtn = document.getElementById('send-note-btn');
 const installBtn = document.getElementById('install-btn');
+const testNotifBtn = document.getElementById('test-notif-btn');
 
 let transferStartTime = 0;
 let transferHistory = [];
@@ -152,17 +153,57 @@ installBtn.addEventListener('click', async () => {
 
 // Notifications
 function requestNotificationPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+    if (!('Notification' in window)) return;
+
+    if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                console.log('Notifications authorized');
+            }
+        });
     }
 }
 
+testNotifBtn.addEventListener('click', () => {
+    if (!('Notification' in window)) {
+        alert("Votre navigateur ne supporte pas les notifications.");
+        return;
+    }
+
+    if (Notification.permission === 'granted') {
+        showNotification('Test Réussi !', 'Ceci est un exemple de notification ILOVESHARE.');
+    } else {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showNotification('Merci !', 'Les notifications sont maintenant activées.');
+            } else {
+                alert("Vous avez désactivé les notifications. Veuillez les réactiver dans les paramètres de votre navigateur.");
+            }
+        });
+    }
+});
+
 function showNotification(title, body) {
     if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(title, {
-            body: body,
-            icon: '/favicon.png'
-        });
+        try {
+            const options = {
+                body: body,
+                icon: '/favicon.png',
+                badge: '/favicon.png',
+                vibrate: [200, 100, 200]
+            };
+
+            // Try Service Worker notification first (works better in background/standalone)
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.ready.then(registration => {
+                    registration.showNotification(title, options);
+                });
+            } else {
+                new Notification(title, options);
+            }
+        } catch (e) {
+            console.error('Notification error:', e);
+        }
     }
 }
 
