@@ -10,10 +10,10 @@ if (!clientId) {
 }
 
 // Connect with auth data
-// Logic: If on localhost, connect to current host (local server).
-// If on deployed URL, connect to current host.
-// The DEPLOYED_URL is only used for generating the QR code to ensure phones can reach the public signaling server.
-const socket = io(undefined, {
+// Fixed: If we are on Localhost, we usually want to connect to the local server.
+// BUT, if we are on a phone scanning a QR code, the phone might not be able to reach 'localhost'.
+// However, the browser 'io(origin)' automatically connects to the server that served the page.
+const socket = io(window.location.origin, {
     auth: {
         clientId: clientId
     },
@@ -67,15 +67,11 @@ if (roomId) {
     roomId = generateRoomId();
     console.log('Created room:', roomId);
 
-    // Always generate QR code pointing to Production URL
-    // So phone (on 4G/Wifi) goes to the working public server
-    const baseUrl = isLocal ? DEPLOYED_URL : window.location.origin;
-    const newUrl = baseUrl + '/?room=' + roomId;
-
-    // Only update local URL state if not redirecting (optional)
-    if (!isLocal) {
-        window.history.pushState({ path: newUrl }, '', newUrl);
-    }
+    // QR Code Logic:
+    // If we are on localhost, the phone won't be able to reach it.
+    // We should probably show a message or use an Ngrok/Localhost.run link, 
+    // but for now, let's just make sure the URL displayed is correct.
+    const newUrl = window.location.origin + '/?room=' + roomId;
 
     // Show QR Code
     qrContainer.classList.remove('hidden');
@@ -134,6 +130,7 @@ socket.on('offer', async (data) => {
 
     const answer = await peerConnection.createAnswer();
     await peerConnection.setLocalDescription(answer);
+    console.log("Sending Answer to", data.from);
     socket.emit('answer', { to: data.from, answer: answer });
 });
 
@@ -219,15 +216,18 @@ function onFolderSelect(peerId) {
 }
 
 function startFileTransfer(file) {
+    console.log("Starting file transfer for:", file.name, "to peer:", selectedPeerId);
     window.pendingFile = file;
 
     // Initiate WebRTC connection if not exists
-    if (!peerConnection || peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'closed') {
+    if (!peerConnection || peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'closed' || peerConnection.connectionState === 'failed') {
+        console.log("Initializing new PeerConnection...");
         createPeerConnection(selectedPeerId, true);
     } else if (dataChannel && dataChannel.readyState === 'open') {
+        console.log("DataChannel already open, sending file immediately.");
         sendFile(file);
     } else {
-        console.log("Waiting for data channel to open...");
+        console.log("Connection exists but DataChannel is not open. State:", dataChannel ? dataChannel.readyState : "N/A");
     }
 }
 
@@ -281,12 +281,29 @@ async function createPeerConnection(peerId, isInitiator) {
 
     peerConnection.onicecandidate = (event) => {
         if (event.candidate) {
+            console.log("Sending ICE Candidate to", peerId);
             socket.emit('ice-candidate', { to: peerId, candidate: event.candidate });
         }
     };
 
     peerConnection.onconnectionstatechange = () => {
-        console.log('Connection state:', peerConnection.connectionState);
+        console.log('PeerConnection State:', peerConnection.connectionState);
+        const statusEl = document.getElementById('connection-status');
+        if (statusEl) {
+            statusEl.innerText = `Status: ${peerConnection.connectionState}`;
+        }
+        if (peerConnection.connectionState === 'failed') {
+            console.error("WebRTC Connection Failed. Check STUN/TURN servers or firewall.");
+            showStatus("Connection Failed - Retrying...");
+        }
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+        console.log('ICE Connection State:', peerConnection.iceConnectionState);
+    };
+
+    peerConnection.onsignalingstatechange = () => {
+        console.log('Signaling State:', peerConnection.signalingState);
     };
 
     if (!isInitiator) {
@@ -302,16 +319,29 @@ async function createPeerConnection(peerId, isInitiator) {
 
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
+        console.log("Sending Offer to", peerId);
         socket.emit('offer', { to: peerId, offer: offer });
     }
 }
 
 function setupDataChannel(channel, fileToSend = null) {
+    console.log("Setting up DataChannel:", channel.label);
+
     channel.onopen = () => {
-        console.log("Data Channel Open");
+        console.log("Data Channel Open!");
         if (fileToSend) {
+            console.log("Sending pending file...");
             sendFile(fileToSend);
+            window.pendingFile = null;
         }
+    };
+
+    channel.onclose = () => {
+        console.log("Data Channel Closed");
+    };
+
+    channel.onerror = (error) => {
+        console.error("Data Channel Error:", error);
     };
 
     channel.onmessage = handleReceiveMessage;
