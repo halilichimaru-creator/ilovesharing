@@ -10,10 +10,16 @@ if (!clientId) {
 }
 
 // Connect with auth data
-const socket = io(isLocal ? DEPLOYED_URL : undefined, {
+// Logic: If on localhost, connect to current host (local server).
+// If on deployed URL, connect to current host.
+// The DEPLOYED_URL is only used for generating the QR code to ensure phones can reach the public signaling server.
+const socket = io(undefined, {
     auth: {
         clientId: clientId
-    }
+    },
+    reconnection: true,
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1000
 });
 
 const fileInput = document.getElementById('file-input');
@@ -153,7 +159,7 @@ socket.on('ice-candidate', async (data) => {
         if (peerConnection.remoteDescription && peerConnection.remoteDescription.type) {
             try {
                 await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-                // console.log("Added ICE candidate immediatley");
+                console.log("Added ICE candidate immediately");
             } catch (e) {
                 console.error("Error adding candidate", e);
             }
@@ -213,31 +219,15 @@ function onFolderSelect(peerId) {
 }
 
 function startFileTransfer(file) {
+    window.pendingFile = file;
+
     // Initiate WebRTC connection if not exists
-    if (!peerConnection) {
-        createPeerConnection(selectedPeerId, true).then(() => {
-            // Wait for data channel to be open? 
-            // The createPeerConnection sets up data channel for initiator
-            // We need to wait for 'open' event on datachannel before sending
-            // But existing logic might handle it. 
-            // Actually, createPeerConnection creates separate DC.
-            // We usually queue the file or wait.
-            // For simplicity, let's assume connected or wait for 'open'
-        });
-    }
-
-    // In this simple architecture, we might already have a connection or need to start one.
-    // If we are initiator, channel is created in createPeerConnection.
-
-    // CHECK: Is dataChannel ready?
-    if (dataChannel && dataChannel.readyState === 'open') {
+    if (!peerConnection || peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'closed') {
+        createPeerConnection(selectedPeerId, true);
+    } else if (dataChannel && dataChannel.readyState === 'open') {
         sendFile(file);
     } else {
-        // Queue it? 
-        // For now, assume createPeerConnection(initiator=true) was called and we will send when open
-        // But createPeerConnection is async.
-        // We set a global 'pendingFile' to send once channel opens.
-        window.pendingFile = file;
+        console.log("Waiting for data channel to open...");
     }
 }
 

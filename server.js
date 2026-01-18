@@ -31,13 +31,13 @@ io.on('connection', (socket) => {
         }
 
         // GHOST FIX: Remove any existing connection with same clientId
-        // The previous socket might have 'disconnected' poorly
+        // The previous socket might have 'disconnected' poorly or reconnected quickly
         for (const existingSocketId in rooms[roomId]) {
             if (rooms[roomId][existingSocketId].clientId === clientId) {
-                console.log(`Removing ghost socket ${existingSocketId} for client ${clientId}`);
+                console.log(`[GhostFix] Removing old socket ${existingSocketId} for client ${clientId}`);
                 delete rooms[roomId][existingSocketId];
-                // Optional: Force disconnect the old socket if possible? 
-                // io.sockets.sockets.get(existingSocketId)?.disconnect();
+                // Optional: We could attempt to force disconnect the old socket, 
+                // but usually the client has already abandoned it.
             }
         }
 
