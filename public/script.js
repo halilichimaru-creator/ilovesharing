@@ -29,6 +29,23 @@ const qrSection = document.getElementById('qr-section');
 const urlDisplay = document.getElementById('url-display');
 const transferFilename = document.getElementById('transfer-filename');
 const transferPercent = document.getElementById('transfer-percent');
+const themeToggle = document.getElementById('theme-toggle');
+const historySection = document.getElementById('history-section');
+const historyList = document.getElementById('history-list');
+const transferSpeed = document.getElementById('transfer-speed');
+const transferEta = document.getElementById('transfer-eta');
+
+// Phase 2 Elements
+const clipboardArea = document.getElementById('clipboard-area');
+const copyBtn = document.getElementById('copy-btn');
+const notesDisplay = document.getElementById('notes-display');
+const noteInput = document.getElementById('note-input');
+const sendNoteBtn = document.getElementById('send-note-btn');
+const installBtn = document.getElementById('install-btn');
+
+let transferStartTime = 0;
+let transferHistory = [];
+let deferredPrompt;
 
 let myId = null;
 let roomId = null;
@@ -97,12 +114,123 @@ function generateRoomId() {
 
 // --- Socket.io Events ---
 
+// --- Theme Management ---
+let currentTheme = localStorage.getItem('iloveshare_theme') || 'light';
+document.documentElement.setAttribute('data-theme', currentTheme);
+
+themeToggle.addEventListener('click', () => {
+    currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    localStorage.setItem('iloveshare_theme', currentTheme);
+});
+
+// --- PWA & Notifications (Phase 3) ---
+
+// Service Worker Registration
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+        .then(() => console.log('Service Worker Registered'));
+}
+
+// Installation Prompt
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.classList.remove('hidden');
+});
+
+installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            installBtn.classList.add('hidden');
+        }
+        deferredPrompt = null;
+    }
+});
+
+// Notifications
+function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+}
+
+function showNotification(title, body) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+            body: body,
+            icon: '/favicon.png'
+        });
+    }
+}
+
+// Request permission on first interaction or connect
 socket.on('connect', () => {
+    requestNotificationPermission();
     myId = socket.id;
     console.log('Connected, Socket ID:', myId, 'Client ID:', clientId);
 
     // Join the room
     if (roomId) {
+        // --- Communication & Magic Logic (Phase 2) ---
+
+        // Shared Clipboard
+        clipboardArea.addEventListener('input', () => {
+            broadcastMessage({
+                type: 'clipboard',
+                text: clipboardArea.value
+            });
+        });
+
+        copyBtn.addEventListener('click', () => {
+            clipboardArea.select();
+            document.execCommand('copy');
+            copyBtn.innerText = 'Copié !';
+            setTimeout(() => copyBtn.innerText = 'Copier', 2000);
+        });
+
+        // Direct Notes
+        sendNoteBtn.addEventListener('click', sendNote);
+        noteInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendNote();
+        });
+
+        function sendNote() {
+            const text = noteInput.value.trim();
+            if (!text) return;
+
+            broadcastMessage({
+                type: 'note',
+                text: text
+            });
+
+            displayNote(text, true);
+            noteInput.value = '';
+        }
+
+        function displayNote(text, isSelf) {
+            const emptyMsg = notesDisplay.querySelector('.empty-notes');
+            if (emptyMsg) emptyMsg.remove();
+
+            const note = document.createElement('div');
+            note.className = `note-item ${isSelf ? 'self' : ''}`;
+            note.innerText = text;
+            notesDisplay.appendChild(note);
+            notesDisplay.scrollTop = notesDisplay.scrollHeight;
+        }
+
+        function broadcastMessage(data) {
+            // Send to all open data channels
+            for (const id in peerConnections) {
+                const dc = dataChannels[id];
+                if (dc && dc.readyState === 'open') {
+                    dc.send(JSON.stringify(data));
+                }
+            }
+        }
+
         socket.emit('join-room', roomId);
     }
 });
@@ -355,7 +483,7 @@ const CHUNK_SIZE = 64 * 1024; // 64KB (Increased for speed)
 const MAX_BUFFER_AMOUNT = 16 * 1024 * 1024; // 16MB
 
 async function sendFile(file) {
-    showStatus(`Sending ${file.name}...`);
+    showStatus(`Envoi de ${file.name}...`);
 
     // Configure backpressure threshold
     dataChannel.bufferedAmountLowThreshold = 1024 * 1024; // 1MB
@@ -369,10 +497,11 @@ async function sendFile(file) {
     }));
 
     let offset = 0;
+    transferStartTime = Date.now();
 
     const readNextChunk = () => {
-        const reader = new FileReader();
         const chunk = file.slice(offset, offset + CHUNK_SIZE);
+        const reader = new FileReader();
 
         reader.onload = async (e) => {
             const buffer = e.target.result;
@@ -397,17 +526,19 @@ async function sendFile(file) {
                 } else {
                     // Send EOF
                     dataChannel.send(JSON.stringify({ type: 'eof' }));
-                    showStatus('Sent successfully!');
+                    showStatus('Envoi terminé !');
+                    addToHistory(file.name, file.size, 'sent');
+                    showNotification('Transfert réussi !', `Le fichier ${file.name} a été envoyé.`);
                 }
             } catch (err) {
                 console.error("Transfer Error:", err);
-                showStatus('Error sending file.');
+                showStatus('Erreur lors de l\'envoi.');
             }
         };
 
         reader.onerror = (err) => {
             console.error("FileReader Error:", err);
-            showStatus('Error reading file.');
+            showStatus('Erreur de lecture.');
         };
 
         reader.readAsArrayBuffer(chunk);
@@ -431,9 +562,20 @@ function handleReceiveMessage(event) {
             currentFileName = message.name;
             currentFileType = message.fileType;
             isReceiving = true;
-            showStatus(`Receiving ${currentFileName}...`);
+            transferStartTime = Date.now();
+            showStatus(`Réception de ${currentFileName}...`);
         } else if (message.type === 'eof') {
             downloadFile();
+            addToHistory(currentFileName, totalSize, 'received');
+            showNotification('Fichier reçu !', currentFileName);
+        } else if (message.type === 'clipboard') {
+            clipboardArea.value = message.text;
+        } else if (message.type === 'note') {
+            displayNote(message.text, false);
+            // Optionally notify user for high visibility
+            if (document.hidden) {
+                showNotification('Nouveau message !', message.text);
+            }
         }
     } else {
         // It's a chunk (ArrayBuffer)
@@ -470,6 +612,26 @@ function updateProgress(current, total) {
     progressBar.style.width = percent + '%';
     transferPercent.innerText = percent + '%';
 
+    // Speed & ETA Calculation
+    const now = Date.now();
+    const duration = (now - transferStartTime) / 1000; // seconds
+    if (duration > 0.5) { // Update after 0.5s to get stable reading
+        const speedBps = current / duration; // bytes per second
+        const speedMbps = (speedBps / (1024 * 1024)).toFixed(2);
+        transferSpeed.innerText = `${speedMbps} MB/s`;
+
+        const remainingBytes = total - current;
+        const etaSeconds = Math.round(remainingBytes / speedBps);
+
+        if (etaSeconds > 60) {
+            const mins = Math.floor(etaSeconds / 60);
+            const secs = etaSeconds % 60;
+            transferEta.innerText = `${mins}m ${secs}s restants`;
+        } else {
+            transferEta.innerText = `${etaSeconds}s restants`;
+        }
+    }
+
     if (isReceiving) {
         statusText.innerText = `Réception... ${percent}%`;
     } else {
@@ -477,9 +639,49 @@ function updateProgress(current, total) {
     }
 }
 
+function addToHistory(name, size, type) {
+    const item = {
+        name,
+        size: formatBytes(size),
+        type, // 'sent' or 'received'
+        time: new Date().toLocaleTimeString()
+    };
+    transferHistory.unshift(item); // Add to start
+    updateHistoryUI();
+}
+
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function updateHistoryUI() {
+    if (transferHistory.length > 0) {
+        historySection.classList.remove('hidden');
+    }
+    historyList.innerHTML = transferHistory.map(item => `
+        <div class="history-item">
+            <div class="history-info">
+                <span class="history-icon">${item.type === 'sent' ? '📤' : '📥'}</span>
+                <div>
+                    <div class="history-name">${item.name}</div>
+                    <div class="history-size">${item.size} • ${item.time}</div>
+                </div>
+            </div>
+            <div class="history-status">✅</div>
+        </div>
+    `).join('');
+}
+
 function showStatus(msg) {
     transferOverlay.classList.remove('hidden');
     statusText.innerText = msg;
+    progressBar.style.width = '0%';
+    transferSpeed.innerText = '0 MB/s';
     if (window.pendingFile) {
         transferFilename.innerText = window.pendingFile.name;
     } else if (currentFileName) {

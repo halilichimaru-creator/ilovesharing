@@ -1,0 +1,17 @@
+{
+    "name": "ILOVESHARE",
+    "short_name": "ILOVESHARE",
+    "description": "Partage de fichiers ultra-rapide et sécurisé",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#F8F9FA",
+    "theme_color": "#4A90E2",
+    "icons": [
+        {
+            "src": "/favicon.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

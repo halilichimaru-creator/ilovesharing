@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ILOVESHARE | Partage de fichiers ultra-rapide et sécurisé</title>
-    <meta name="description" content="Partagez vos fichiers et dossiers instantanément entre vos appareils. Pas de cloud, pas de câbles, juste du direct et du sécurisé.">
+    <meta name="description"
+        content="Partagez vos fichiers et dossiers instantanément entre vos appareils. Pas de cloud, pas de câbles, juste du direct et du sécurisé.">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div class="background-blobs">
         <div class="blob yellow"></div>
@@ -22,7 +26,13 @@
                 <img src="favicon.png" alt="ILOVESHARE Logo">
                 <span>ILOVE<strong>SHARE</strong></span>
             </div>
-            <div id="connection-status" class="status-badge">Prêt à connecter</div>
+            <div class="nav-actions">
+                <button id="install-btn" class="status-badge hidden"
+                    style="cursor:pointer; border: 1px solid var(--primary); color: var(--primary);">Installer
+                    l'App</button>
+                <button id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode">🌓</button>
+                <div id="connection-status" class="status-badge">Prêt à connecter</div>
+            </div>
         </nav>
 
         <header class="hero">
@@ -48,6 +58,38 @@
                 <p>En attente d'autres appareils...</p>
             </div>
         </main>
+
+        <section id="history-section" class="history-section hidden">
+            <h2>Historique des transferts</h2>
+            <div id="history-list" class="history-list">
+                <!-- History items will appear here -->
+            </div>
+        </section>
+
+        <section class="magic-section">
+            <div class="magic-grid">
+                <div class="magic-card clipboard">
+                    <div class="magic-header">
+                        <h3>📋 Presse-papier</h3>
+                        <span class="magic-badge">Sync auto</span>
+                    </div>
+                    <textarea id="clipboard-area" placeholder="Copiez du texte ici pour le partager..."></textarea>
+                    <button id="copy-btn" class="action-btn">Copier</button>
+                </div>
+                <div class="magic-card notes">
+                    <div class="magic-header">
+                        <h3>✍️ Notes partagées</h3>
+                    </div>
+                    <div id="notes-display" class="notes-display">
+                        <p class="empty-notes">Aucun message pour le moment...</p>
+                    </div>
+                    <div class="notes-input-group">
+                        <input type="text" id="note-input" placeholder="Écrire une note...">
+                        <button id="send-note-btn">🚀</button>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <section class="how-it-works">
             <h2>Comment ça marche ?</h2>
@@ -80,6 +122,10 @@
                     <div class="progress-container">
                         <div id="progress-bar" class="progress-bar"></div>
                     </div>
+                    <div class="transfer-stats">
+                        <span id="transfer-speed">0 MB/s</span>
+                        <span id="transfer-eta">Calcul...</span>
+                    </div>
                     <p id="status-text">Initialisation...</p>
                 </div>
             </div>
@@ -96,4 +142,5 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>
