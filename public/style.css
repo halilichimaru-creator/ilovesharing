@@ -1,213 +1,411 @@
 :root {
-    --primary-color: #4A90E2;
-    --background-color: #F5F7FA;
-    --card-bg: #FFFFFF;
-    --text-color: #333333;
-    --secondary-text: #666666;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --radius: 12px;
+    --primary: #4A90E2;
+    --yellow: #FAEDCD;
+    --blue: #D4E9FF;
+    --purple: #E2D1F9;
+    --bg: #F8F9FA;
+    --text: #1A1A1A;
+    --text-muted: #6C757D;
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --radius: 20px;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 body {
-    font-family: 'Inter', sans-serif;
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    color: var(--text-color);
-    display: flex;
-    justify-content: center;
-    min-height: 100vh;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text);
+    background-color: var(--bg);
+    overflow-x: hidden;
+    line-height: 1.6;
 }
 
-.app-container {
-    width: 100%;
-    max-width: 800px;
-    padding: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* Animated Background Blobs */
+.background-blobs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    filter: blur(80px);
+    opacity: 0.6;
 }
 
-header {
-    text-align: center;
-    margin-bottom: 2rem;
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    animation: move 20s infinite alternate;
 }
 
-header h1 {
-    font-size: 2.5rem;
-    margin: 0;
-    color: var(--primary-color);
+.blob.yellow {
+    width: 400px;
+    height: 400px;
+    background: var(--yellow);
+    top: -100px;
+    left: -100px;
 }
 
-header p {
-    color: var(--secondary-text);
-    margin-top: 0.5rem;
+.blob.blue {
+    width: 500px;
+    height: 500px;
+    background: var(--blue);
+    bottom: -150px;
+    right: -100px;
+    animation-delay: -5s;
 }
 
-/* QR Code Section */
-.qr-container {
-    background: var(--card-bg);
-    padding: 2rem;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-    text-align: center;
-    margin-bottom: 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.blob.purple {
+    width: 450px;
+    height: 450px;
+    background: var(--purple);
+    top: 50%;
+    left: 40%;
+    animation-delay: -10s;
 }
 
-#qrcode img {
-    margin: 0 auto;
-}
-
-.room-url {
-    word-break: break-all;
-    margin-top: 1rem;
-    color: var(--primary-color);
-}
-
-.device-list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 2rem;
-    width: 100%;
-    flex-grow: 1;
-}
-
-.device-card {
-    background: var(--card-bg);
-    border-radius: var(--radius);
-    padding: 1.5rem;
-    width: 200px;
-    height: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    animation: fadeIn 0.5s ease-out forwards;
-}
-
-@keyframes fadeIn {
+@keyframes move {
     from {
-        opacity: 0;
-        transform: translateY(10px);
+        transform: translate(0, 0) scale(1);
     }
 
     to {
-        opacity: 1;
-        transform: translateY(0);
+        transform: translate(100px, 50px) scale(1.1);
     }
 }
 
-.device-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+.app-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem;
 }
 
-.device-card .actions {
+/* Navbar */
+.navbar {
     display: flex;
-    gap: 0.5rem;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 0;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 800;
+}
+
+.logo img {
+    width: 40px;
+    height: 40px;
+}
+
+.logo span {
+    letter-spacing: -0.5px;
+}
+
+.status-badge {
+    padding: 0.5rem 1rem;
+    background: white;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    color: var(--text-muted);
+}
+
+/* Hero */
+.hero {
+    text-align: center;
+    padding: 4rem 0;
+}
+
+.hero h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    line-height: 1.1;
+}
+
+.hero h1 span {
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero p {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* QR Section */
+.qr-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 4rem;
+}
+
+.qr-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    padding: 2.5rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    max-width: 600px;
+}
+
+#qrcode {
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+}
+
+.qr-info h3 {
+    margin-bottom: 0.5rem;
+}
+
+.qr-info p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+code {
+    display: block;
+    background: #eee;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    word-break: break-all;
+}
+
+/* Device Grid */
+.device-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 6rem;
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 2px dashed #ddd;
+}
+
+.loader-ring {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1.5rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.device-card {
+    background: white;
+    padding: 2rem;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.3s ease;
+}
+
+.device-card:hover {
+    transform: translateY(-8px);
+}
+
+.device-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.device-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+.actions {
+    display: flex;
+    gap: 0.75rem;
     width: 100%;
-    margin-top: 1rem;
 }
 
 .action-btn {
     flex: 1;
-    padding: 0.5rem;
+    padding: 0.8rem;
     border: none;
-    border-radius: 6px;
-    background: var(--primary-color);
+    border-radius: 12px;
+    background: var(--primary);
     color: white;
+    font-family: inherit;
+    font-weight: 600;
     cursor: pointer;
-    font-size: 0.8rem;
-    transition: background 0.2s;
+    transition: filter 0.2s;
 }
 
 .action-btn:hover {
-    background: #357ABD;
+    filter: brightness(1.1);
 }
 
 .action-btn.folder-btn {
-    background: #FF9800;
+    background: #333;
 }
 
-.action-btn.folder-btn:hover {
-    background: #F57C00;
-}
-
-
-.device-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
-}
-
-.device-icon {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: var(--secondary-text);
-}
-
-.device-name {
-    font-weight: 600;
+/* How it Works */
+.how-it-works {
+    padding: 6rem 0;
     text-align: center;
 }
 
-footer {
-    width: 100%;
-    text-align: center;
-    margin-top: 2rem;
+.how-it-works h2 {
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
 }
 
-#transfer-status {
-    background: var(--card-bg);
-    padding: 1rem;
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.step-card {
+    background: white;
+    padding: 3rem 2rem;
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    margin-top: 1rem;
-    width: 100%;
-    max-width: 400px;
-    margin-left: auto;
-    margin-right: auto;
+    position: relative;
+}
+
+.step-num {
+    position: absolute;
+    top: 1rem;
+    left: 1.5rem;
+    font-size: 4rem;
+    font-weight: 900;
+    color: rgba(0, 0, 0, 0.05);
+    line-height: 1;
+}
+
+.step-card h3 {
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+/* Footer / Transfer Overlay */
+.app-footer {
+    text-align: center;
+    padding: 4rem 0;
+    color: var(--text-muted);
+}
+
+.transfer-overlay {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1000;
+    width: 350px;
+    animation: slideUp 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.transfer-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 20px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+    text-align: left;
+}
+
+.transfer-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+.progress-container {
+    height: 12px;
+    background: #eee;
+    border-radius: 50px;
+    overflow: hidden;
+    margin-bottom: 0.75rem;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4A90E2, #9B51E0);
+    width: 0%;
+    border-radius: 50px;
+    transition: width 0.1s linear;
+}
+
+#status-text {
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
 .hidden {
     display: none !important;
 }
 
-.progress-container {
-    width: 100%;
-    background-color: #E0E0E0;
-    border-radius: 8px;
-    height: 8px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
-}
-
-.progress-bar {
-    height: 100%;
-    background-color: var(--primary-color);
-    width: 0%;
-    transition: width 0.1s linear;
-}
-
-/* Mobile Adjustments */
-@media (max-width: 600px) {
-    .app-container {
-        padding: 1rem;
+/* Responsive */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 1.5rem 0;
     }
 
-    .device-card {
-        width: 120px;
-        height: 120px;
+    .hero h1 {
+        font-size: 2.5rem;
     }
 
-    header h1 {
-        font-size: 2rem;
+    .qr-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .transfer-overlay {
+        left: 1rem;
+        right: 1rem;
+        width: calc(100% - 2rem);
     }
 }

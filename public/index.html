@@ -1,44 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LocalDrop</title>
+    <title>ILOVESHARE | Partage de fichiers ultra-rapide et sécurisé</title>
+    <meta name="description" content="Partagez vos fichiers et dossiers instantanément entre vos appareils. Pas de cloud, pas de câbles, juste du direct et du sécurisé.">
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="icon" href="data:,"> <!-- Simple favicon fix -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
-
 <body>
+    <div class="background-blobs">
+        <div class="blob yellow"></div>
+        <div class="blob blue"></div>
+        <div class="blob purple"></div>
+    </div>
+
     <div class="app-container">
-        <header>
-            <h1>LocalDrop</h1>
-            <p id="connection-status">Ready to connect</p>
+        <nav class="navbar">
+            <div class="logo">
+                <img src="favicon.png" alt="ILOVESHARE Logo">
+                <span>ILOVE<strong>SHARE</strong></span>
+            </div>
+            <div id="connection-status" class="status-badge">Prêt à connecter</div>
+        </nav>
+
+        <header class="hero">
+            <h1>Partagez vos fichiers <span>simplement</span></h1>
+            <p>Connectez vos appareils instantanément via votre réseau local. Sécurisé, rapide et gratuit.</p>
         </header>
 
-        <!-- QR Code Area (Visible only to Host) -->
-        <div id="qr-container" class="qr-container hidden">
-            <div id="qrcode"></div>
-            <p>Scan with your phone to join</p>
-            <p class="room-url"><small id="url-display"></small></p>
-        </div>
+        <section id="qr-section" class="qr-section hidden">
+            <div class="qr-card">
+                <div id="qrcode"></div>
+                <div class="qr-info">
+                    <h3>Scannez pour rejoindre</h3>
+                    <p>Utilisez l'appareil photo de votre téléphone pour vous connecter à cette session.</p>
+                    <code id="url-display"></code>
+                </div>
+            </div>
+        </section>
 
-        <main id="device-list" class="device-list">
-            <!-- Connected devices will appear here -->
+        <main id="device-list" class="device-grid">
+            <!-- Devices will appear here -->
+            <div class="empty-state">
+                <div class="loader-ring"></div>
+                <p>En attente d'autres appareils...</p>
+            </div>
         </main>
 
-        <footer>
-            <div id="transfer-status" class="hidden">
-                <div class="progress-container">
-                    <div class="progress-bar" id="progress-bar"></div>
+        <section class="how-it-works">
+            <h2>Comment ça marche ?</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-num">01</div>
+                    <h3>Ouvrez le site</h3>
+                    <p>Ouvrez ILOVESHARE sur les deux appareils que vous voulez connecter.</p>
                 </div>
-                <p id="status-text">Transferring...</p>
+                <div class="step-card">
+                    <div class="step-num">02</div>
+                    <h3>Scannez le QR</h3>
+                    <p>Scannez le code QR de l'ordinateur avec votre téléphone pour créer un lien direct.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-num">03</div>
+                    <h3>Partagez !</h3>
+                    <p>Sélectionnez vos fichiers et transférez-les à la vitesse de l'éclair.</p>
+                </div>
             </div>
+        </section>
+
+        <footer class="app-footer">
+            <div id="transfer-overlay" class="transfer-overlay hidden">
+                <div class="transfer-card">
+                    <div class="transfer-header">
+                        <span id="transfer-filename">Fichier en cours...</span>
+                        <span id="transfer-percent">0%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div id="progress-bar" class="progress-bar"></div>
+                    </div>
+                    <p id="status-text">Initialisation...</p>
+                </div>
+            </div>
+            <p>&copy; 2026 ILOVESHARE. Fait avec passion pour le partage.</p>
         </footer>
     </div>
 
-    <!-- Hidden file inputs -->
+    <!-- Hidden inputs -->
     <input type="file" id="file-input" multiple style="display: none;">
     <input type="file" id="folder-input" webkitdirectory directory multiple style="display: none;">
 
@@ -47,5 +96,4 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>
-
 </html>

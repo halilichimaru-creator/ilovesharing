@@ -22,11 +22,13 @@ const socket = io(window.location.origin, {
 
 const fileInput = document.getElementById('file-input');
 const deviceList = document.getElementById('device-list');
-const transferStatus = document.getElementById('transfer-status');
+const transferOverlay = document.getElementById('transfer-overlay');
 const progressBar = document.getElementById('progress-bar');
 const statusText = document.getElementById('status-text');
-const qrContainer = document.getElementById('qr-container');
+const qrSection = document.getElementById('qr-section');
 const urlDisplay = document.getElementById('url-display');
+const transferFilename = document.getElementById('transfer-filename');
+const transferPercent = document.getElementById('transfer-percent');
 
 let myId = null;
 let roomId = null;
@@ -75,14 +77,16 @@ if (roomId) {
     // but for now, let's just make sure the URL displayed is correct.
     const newUrl = window.location.origin + '/?room=' + roomId;
 
-    // Show QR Code
-    qrContainer.classList.remove('hidden');
+    // Show QR Section
+    qrSection.classList.remove('hidden');
     urlDisplay.innerText = newUrl;
 
     new QRCode(document.getElementById("qrcode"), {
         text: newUrl,
-        width: 128,
-        height: 128
+        width: 160,
+        height: 160,
+        colorDark: "#1A1A1A",
+        colorLight: "#ffffff",
     });
 }
 
@@ -238,36 +242,32 @@ function updateDeviceList(users) {
     // Clear list
     deviceList.innerHTML = '';
 
-    // Filter out self (by checking clientId)
+    // Filter out self
     const peers = users.filter(u => u.clientId !== clientId);
 
-    if (peers.length > 0) {
-        // qrContainer.classList.add('hidden'); // Optional: hide QR when connected
-    }
-
     if (peers.length === 0) {
-        if (roomId && window.location.search.includes('room')) { // Check if we are a client in a room
-            deviceList.innerHTML = `<p style="text-align:center;">Waiting for host...</p>`;
-        }
+        deviceList.innerHTML = `
+            <div class="empty-state">
+                <div class="loader-ring"></div>
+                <p>En attente d'autres appareils sur votre réseau...</p>
+            </div>
+        `;
         return;
     }
 
     peers.forEach(user => {
         const card = document.createElement('div');
         card.className = 'device-card';
-        // Remove global onclick, use buttons
-        // card.onclick = () => onDeviceSelect(user.id);
 
         const icon = user.deviceType === 'Mobile' ? '📱' : '💻';
-        // Use server provided name if available, else fallback
-        const displayName = user.deviceName || user.deviceType;
+        const displayName = user.deviceName || (user.deviceType === 'Mobile' ? 'Smartphone' : 'Ordinateur');
 
         card.innerHTML = `
             <div class="device-icon">${icon}</div>
             <div class="device-name">${displayName}</div>
             <div class="actions">
-                <button class="action-btn" onclick="onFileSelect('${user.id}')">File</button>
-                <button class="action-btn folder-btn" onclick="onFolderSelect('${user.id}')">Folder</button>
+                <button class="action-btn" onclick="onFileSelect('${user.id}')">Fichier</button>
+                <button class="action-btn folder-btn" onclick="onFolderSelect('${user.id}')">Dossier</button>
             </div>
         `;
         deviceList.appendChild(card);
@@ -457,9 +457,9 @@ function downloadFile() {
     URL.revokeObjectURL(url);
     receivedChunks = [];
     isReceiving = false;
-    showStatus('Download complete!');
+    showStatus('Téléchargement terminé !');
     setTimeout(() => {
-        transferStatus.classList.add('hidden');
+        transferOverlay.classList.add('hidden');
     }, 3000);
 }
 
@@ -468,16 +468,21 @@ function downloadFile() {
 function updateProgress(current, total) {
     const percent = Math.round((current / total) * 100);
     progressBar.style.width = percent + '%';
+    transferPercent.innerText = percent + '%';
 
     if (isReceiving) {
-        statusText.innerText = `Receiving... ${percent}%`;
+        statusText.innerText = `Réception... ${percent}%`;
     } else {
-        statusText.innerText = `Sending... ${percent}%`;
+        statusText.innerText = `Envoi... ${percent}%`;
     }
 }
 
 function showStatus(msg) {
-    transferStatus.classList.remove('hidden');
+    transferOverlay.classList.remove('hidden');
     statusText.innerText = msg;
-    progressBar.style.width = '0%';
+    if (window.pendingFile) {
+        transferFilename.innerText = window.pendingFile.name;
+    } else if (currentFileName) {
+        transferFilename.innerText = currentFileName;
+    }
 }
